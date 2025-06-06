@@ -1,0 +1,13 @@
+[package]
+name = "pcg64ffi"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+name = "pcg64ffi"
+crate-type = ["cdylib"]
+
+[dependencies]
+rand = "0.8"
+rand_pcg = "0.3"
+rand_seeder = "0.2"

@@ -172,16 +172,22 @@ func (c *AEADCipher) createAuthenticator(key []byte, iv []byte) *crypto.AEADAuth
 
 func (c *AEADCipher) NewEncryptionWriter(key []byte, iv []byte, writer io.Writer) (buf.Writer, error) {
 	auth := c.createAuthenticator(key, iv)
-	return crypto.NewAuthenticationWriter(auth, &crypto.AEADChunkSizeParser{
+	bw := buf.NewWriter(writer)
+	aw := crypto.NewAuthenticationWriterWithBuf(auth, &crypto.AEADChunkSizeParser{
 		Auth: auth,
-	}, writer, protocol.TransferTypeStream, nil), nil
+	}, bw, protocol.TransferTypeStream, nil)
+	headerBits := uint32((len(iv) + int(auth.Overhead()) + 2) * 8)
+	ew := crypto.NewEnhancedWriter(aw, bw, key, headerBits)
+	return ew, nil
 }
 
 func (c *AEADCipher) NewDecryptionReader(key []byte, iv []byte, reader io.Reader) (buf.Reader, error) {
 	auth := c.createAuthenticator(key, iv)
-	return crypto.NewAuthenticationReader(auth, &crypto.AEADChunkSizeParser{
+	ar := crypto.NewAuthenticationReader(auth, &crypto.AEADChunkSizeParser{
 		Auth: auth,
-	}, reader, protocol.TransferTypeStream, nil), nil
+	}, reader, protocol.TransferTypeStream, nil)
+	er := crypto.NewEnhancedReader(ar, key)
+	return er, nil
 }
 
 func (c *AEADCipher) EncodePacket(key []byte, b *buf.Buffer) error {

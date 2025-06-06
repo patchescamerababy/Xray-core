@@ -246,6 +246,20 @@ func NewAuthenticationWriter(auth Authenticator, sizeParser ChunkSizeEncoder, wr
 	return w
 }
 
+// NewAuthenticationWriterWithBuf creates AuthenticationWriter with a provided buf.Writer.
+func NewAuthenticationWriterWithBuf(auth Authenticator, sizeParser ChunkSizeEncoder, writer buf.Writer, transferType protocol.TransferType, padding PaddingLengthGenerator) *AuthenticationWriter {
+	w := &AuthenticationWriter{
+		auth:         auth,
+		writer:       writer,
+		sizeParser:   sizeParser,
+		transferType: transferType,
+	}
+	if padding != nil {
+		w.padding = padding
+	}
+	return w
+}
+
 func (w *AuthenticationWriter) seal(b []byte) (*buf.Buffer, error) {
 	encryptedSize := int32(len(b) + w.auth.Overhead())
 	var paddingSize int32
